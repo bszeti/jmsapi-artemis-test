@@ -1,0 +1,38 @@
+= Artemis broker test app using simple JMS API
+
+This application can send messages to an Artemis message broker.
+
+== Connection
+
+It supports AMQP (_Qpid JMS Client_) or Artemis Core protocol to connect to the broker.
+
+```
+connection.type=AMQP
+connection.remoteUrl=amqp://localhost:5672?jms.prefetchPolicy.all=10
+```
+
+or
+
+```
+connection.type=CORE
+connection.remoteUrl=tcp://localhost:61616
+```
+
+
+== Send messages
+
+We can send messages to a queue by creating this properties file:
+```
+#See application-send.properties
+send.enabled=true
+send.queue=myqueue
+send.count=20000
+send.message.length=10000
+send.useAnonymousProducers=true
+```
+
+This will send 200000 messages with 10k char message body. It uses a JMS Producer without a default Destination (`useAnonymousProducers=true`).
+
+Run application using the _send_ Spring profile. For example with Maven:
+
+`mvn clean spring-boot:run -Dspring-boot.run.profiles=send`
