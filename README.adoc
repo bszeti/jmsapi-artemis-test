@@ -31,7 +31,7 @@ send.message.length=10000
 send.useAnonymousProducers=true
 ```
 
-This will send 200000 messages with 10k char message body. It uses a JMS Producer without a default Destination (`useAnonymousProducers=true`).
+This will send 200000 messages with 10k char message body. It uses a JMS Producer without a default Destination (`send.useAnonymousProducers=true`).
 
 Run application using the _send_ Spring profile. For example with Maven:
 
