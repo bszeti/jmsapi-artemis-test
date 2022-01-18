@@ -90,6 +90,9 @@ public class Application implements CommandLineRunner {
 	@Value("${receive.filter}")
 	String receiveFilter;
 
+	@Value("${inactivityDuration}")
+	String inactivityDuration;
+
 	@Autowired
 	ConnectionFactory myConnectionFactory;
 
@@ -157,7 +160,7 @@ public class Application implements CommandLineRunner {
 			}
 
 			if (receiveEnabled) {
-				log.info("Receiving message");
+				log.info("Receiving is enabled");
 
 				Session session = connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
 
@@ -194,11 +197,20 @@ public class Application implements CommandLineRunner {
 						break;
 				}
 
-				MessageConsumer consumer =  receiveSelector.isEmpty() ? session.createConsumer( targetQueue ) : session.createConsumer( targetQueue, receiveSelector );
 
 				connection.start();
 
+				if (! inactivityDuration.isEmpty()) {
+					log.info("Sleeping for {}ms", inactivityDuration);
+					Thread.sleep(Long.valueOf(inactivityDuration));
+
+				}
+
+				MessageConsumer consumer =  receiveSelector.isEmpty() ? session.createConsumer( targetQueue ) : session.createConsumer( targetQueue, receiveSelector );
+
+
 				while (!stopReceive) {
+					log.info("Receiving messages");
 					try {
 						Message m = consumer.receive();
 						if (m == null) throw new Exception("stopping");
