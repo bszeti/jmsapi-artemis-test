@@ -63,6 +63,9 @@ public class Application implements CommandLineRunner {
 	@Value("${send.count}")
 	int sendCount;
 
+	@Value("${send.delay}")
+	long sendDelay;
+
 	@Value("${send.message}")
 	String sendMessage;
 
@@ -132,14 +135,14 @@ public class Application implements CommandLineRunner {
 
 			if (sendEnabled) {
 
-				log.info("Sending messages");
+				log.info("Sending messages; threads:{} count:{}", sendThreads, sendCount);
 
 
 				CountDownLatch latch = new CountDownLatch(sendThreads);
 				Thread[] threads = new Thread[sendThreads];
 				for (int i = 0; i < sendThreads; i++) {
 					threads[i] = new Thread(
-						new SendThread(connection, sendQueue, sendMessage, extraHeaders, sendCount, useAnonymousProducers, sendCounter, latch),
+						new SendThread(connection, sendQueue, sendMessage, extraHeaders, sendCount, sendDelay, useAnonymousProducers, sendCounter, latch),
 						"SendThread-"+i
 					);
 					threads[i].start();
@@ -167,7 +170,7 @@ public class Application implements CommandLineRunner {
 				Queue targetQueue = null;
 				switch (connectionFactoryConfig.getType()) {
 					case "AMQP":
-						targetQueue = (session).createQueue(receiveQueue);
+						targetQueue = session.createQueue(receiveQueue);
 						break;
 					case "CORE":
 

@@ -10,7 +10,12 @@ import javax.jms.Queue;
 import javax.jms.Session;
 import javax.jms.TextMessage;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class SendThread implements Runnable{
+
+    private static final Logger log = LoggerFactory.getLogger(SendThread.class);
 
     Connection connection;
     String queue;
@@ -20,14 +25,16 @@ public class SendThread implements Runnable{
     Map<String,String> extraHeaders;
     boolean useAnonymousProducers;
     CountDownLatch latch;
+    long sendDelay;
 
 
-    SendThread(Connection connection, String queue, String message, Map<String,String> extraHeaders, int count, boolean useAnonymousProducers, AtomicInteger sharedCounter, CountDownLatch latch){
+    SendThread(Connection connection, String queue, String message, Map<String,String> extraHeaders, int count, long sendDelay, boolean useAnonymousProducers, AtomicInteger sharedCounter, CountDownLatch latch){
         this.connection=connection;
         this.queue=queue;
         this.message=message;
         this.extraHeaders=extraHeaders;
         this.count=count;
+        this.sendDelay = sendDelay;
         this.sharedCounter = sharedCounter;
         this.useAnonymousProducers=useAnonymousProducers;
         this.latch=latch;
@@ -38,10 +45,14 @@ public class SendThread implements Runnable{
     public void run() {
         try {
 
+            Thread.sleep(15*1000);
+
             // Create Producer
-            // Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
-            Session session = connection.createSession();
+//             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
+            log.debug("Create session");
+            Session session = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
             Queue targetQueue = session.createQueue(queue);
+            log.debug("Create producer");
             MessageProducer producer = session.createProducer( useAnonymousProducers ? null : targetQueue );
 
             connection.start();
@@ -62,6 +73,9 @@ public class SendThread implements Runnable{
                 } else {
                     producer.send(outMessage);
                 }
+
+                //Delay
+                Thread.sleep(sendDelay);
             }
 
         } catch (Exception e) {
