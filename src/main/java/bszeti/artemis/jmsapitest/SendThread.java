@@ -59,7 +59,17 @@ public class SendThread implements Runnable{
 
             for (int i=0; i<count; i++) {
                 // Create message
-                TextMessage outMessage = session.createTextMessage(message);
+                // MessageProducer producerToUse = producer;
+                // TextMessage outMessage = session.createTextMessage(message);
+
+                //Wrong code
+                Session sessionRecreate = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                Queue targetQueueRecreate = sessionRecreate.createQueue(queue);
+                MessageProducer producerToUse = sessionRecreate.createProducer( useAnonymousProducers ? null : targetQueueRecreate );
+                TextMessage outMessage = sessionRecreate.createTextMessage(message);
+
+
+
                 String uuid = UUID.randomUUID().toString();
                 outMessage.setStringProperty("_AMQ_DUPL_ID", uuid);
                 outMessage.setIntProperty("COUNTER", sharedCounter.incrementAndGet());
@@ -69,9 +79,9 @@ public class SendThread implements Runnable{
 
                 //Send message
                 if (producer.getDestination() == null) {
-                    producer.send(targetQueue, outMessage);
+                    producerToUse.send(targetQueue, outMessage);
                 } else {
-                    producer.send(outMessage);
+                    producerToUse.send(outMessage);
                 }
 
                 //Delay
