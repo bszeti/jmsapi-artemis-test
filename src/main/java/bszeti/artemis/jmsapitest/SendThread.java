@@ -63,10 +63,15 @@ public class SendThread implements Runnable{
                 // TextMessage outMessage = session.createTextMessage(message);
 
                 //Wrong code
+                log.debug("Per message - start");
                 Session sessionRecreate = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                log.debug("Per message - created session");
                 Queue targetQueueRecreate = sessionRecreate.createQueue(queue);
+                log.debug("Per message - created queue");
                 MessageProducer producerToUse = sessionRecreate.createProducer( useAnonymousProducers ? null : targetQueueRecreate );
+                log.debug("Per message - created producer");
                 TextMessage outMessage = sessionRecreate.createTextMessage(message);
+                log.debug("Per message - created messafe");
 
 
 
@@ -83,6 +88,7 @@ public class SendThread implements Runnable{
                 } else {
                     producerToUse.send(outMessage);
                 }
+                log.debug("Per message - sent");
 
                 //Delay
                 Thread.sleep(sendDelay);
