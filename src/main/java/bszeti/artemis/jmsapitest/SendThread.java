@@ -65,7 +65,7 @@ public class SendThread implements Runnable{
                 //Wrong code
                 log.debug("Per message - start");
                 long start = System.currentTimeMillis();
-                Session sessionRecreate = connection.createSession(false, Session.AUTO_ACKNOWLEDGE);
+                Session sessionRecreate = connection.createSession(false, Session.CLIENT_ACKNOWLEDGE);
                 log.debug("Per message - created session ({}ms)", System.currentTimeMillis()-start);
                 Queue targetQueueRecreate = sessionRecreate.createQueue(queue);
                 log.debug("Per message - created queue ({}ms)", System.currentTimeMillis()-start);
