@@ -47,10 +47,31 @@
 			<version>2.3.7</version>
 		</dependency>
 
+<!--		<dependency>-->
+<!--			<groupId>org.apache.activemq</groupId>-->
+<!--			<artifactId>artemis-cli</artifactId>-->
+<!--			<version>2.18.0</version>-->
+<!--		</dependency>-->
+
 		<dependency>
 			<groupId>org.apache.activemq</groupId>
-			<artifactId>artemis-cli</artifactId>
-			<version>2.16.0</version>
+			<artifactId>artemis-jms-client-all</artifactId>
+			<version>2.18.0</version>
+		</dependency>
+
+
+
+		<dependency>
+			<groupId>org.apache.activemq</groupId>
+			<artifactId>activemq-client</artifactId>
+<!--			<version>5.11.1</version>-->
+			<version>5.11.0.redhat-621107</version>
+			<exclusions>
+				<exclusion>
+					<groupId>org.apache.geronimo.specs</groupId>
+					<artifactId>geronimo-jms_1.1_spec</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 
 
