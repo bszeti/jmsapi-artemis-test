@@ -45,7 +45,7 @@ public class SendThread implements Runnable{
     public void run() {
         try {
 
-            Thread.sleep(15*1000);
+            //Thread.sleep(15*1000);
 
             // Create Producer
 //             Session session = connection.createSession(true, Session.SESSION_TRANSACTED);
