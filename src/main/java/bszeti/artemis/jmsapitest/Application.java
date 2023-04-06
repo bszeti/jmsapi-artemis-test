@@ -2,19 +2,11 @@ package bszeti.artemis.jmsapitest;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.UUID;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import jakarta.jms.Connection;
-import jakarta.jms.ConnectionFactory;
-import jakarta.jms.Message;
-import jakarta.jms.MessageConsumer;
-import jakarta.jms.MessageProducer;
-import jakarta.jms.Queue;
-import jakarta.jms.Session;
-import jakarta.jms.TextMessage;
+import jakarta.jms.*;
 
 import jakarta.annotation.PostConstruct;
 import org.apache.activemq.artemis.api.core.ActiveMQQueueExistsException;
@@ -24,7 +16,6 @@ import org.apache.activemq.artemis.api.core.client.ClientSession;
 import org.apache.activemq.artemis.api.core.client.ClientSessionFactory;
 import org.apache.activemq.artemis.api.core.client.ServerLocator;
 import org.apache.activemq.artemis.jms.client.ActiveMQQueue;
-import org.apache.activemq.artemis.jms.client.ActiveMQSession;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,10 +24,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.jms.annotation.EnableJms;
-import org.springframework.jms.annotation.JmsListener;
-import org.springframework.jms.core.JmsTemplate;
-import org.springframework.messaging.handler.annotation.Header;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 
@@ -87,11 +74,23 @@ public class Application implements CommandLineRunner {
 	@Value("${receive.queue}")
 	String receiveQueue;
 
+	@Value("${receive.topic}")
+	String receiveTopic;
+
 	@Value("${receive.selector}")
 	String receiveSelector;
 
 	@Value("${receive.filter}")
 	String receiveFilter;
+
+	@Value("${receive.shared}")
+	Boolean receiveShared;
+
+	@Value("${receive.durable}")
+	Boolean receiveDurable;
+
+	@Value("${receive.subscriptionName}")
+	String receiveSubscriptionName;
 
 	@Value("${inactivityDuration}")
 	String inactivityDuration;
@@ -166,50 +165,86 @@ public class Application implements CommandLineRunner {
 				log.info("Receiving is enabled");
 
 				Session session = connection.createSession(false,Session.AUTO_ACKNOWLEDGE);
+				MessageConsumer consumer;
 
-				Queue targetQueue = null;
-				switch (connectionFactoryConfig.getType()) {
-					case "AMQP":
-						targetQueue = session.createQueue(receiveQueue);
-						break;
-					case "CORE":
+				// Destination is Queue or Topic?
+				if (receiveTopic == null || receiveTopic.isEmpty()) {
+					// Creating Queue consumer
+					log.info("receiveQueue: {}",receiveQueue);
+					log.info("receiveSelector: {}", receiveSelector);
+					Queue targetQueue = null;
+					switch (connectionFactoryConfig.getType()) {
+						case "AMQP":
+							targetQueue = session.createQueue(receiveQueue);
+							break;
+						case "CORE":
+							// Create queue remotely using CORE API
+							log.info("receiveFilter: {}", receiveFilter);
+							ServerLocator locator = ActiveMQClient.createServerLocator(connectionFactoryConfig.getRemoteUrl());
+							ClientSessionFactory factory = locator.createSessionFactory();
 
-						// Create queue remotely using CORE API
-						ServerLocator locator = ActiveMQClient.createServerLocator(connectionFactoryConfig.getRemoteUrl());
-						ClientSessionFactory factory = locator.createSessionFactory();
+							ClientSession clientSession = factory.createSession(
+									connectionFactoryConfig.getUsername(), connectionFactoryConfig.getPassword(),
+									false, false, true, locator.isPreAcknowledge(), locator.getAckBatchSize()
+							);
+							try {
+								clientSession.createQueue(new QueueConfiguration(receiveQueue).setFilterString(!receiveFilter.isEmpty() ? receiveFilter : null));
+							} catch (ActiveMQQueueExistsException ex) {
 
-						ClientSession clientSession = factory.createSession(
-							connectionFactoryConfig.getUsername(),connectionFactoryConfig.getPassword(),
-							false, false, true, locator.isPreAcknowledge(),locator.getAckBatchSize()
-						);
-						try {
-							clientSession.createQueue(new QueueConfiguration(receiveQueue).setFilterString(!receiveFilter.isEmpty() ? receiveFilter : null));
-						} catch (ActiveMQQueueExistsException ex) {
+								log.debug("Queue exists: {}", ex.getMessage());
+							}
 
-							log.debug("Queue exists: {}", ex.getMessage());
-						}
-
-						// Connect to queue using JMS
-						targetQueue = ((org.apache.activemq.artemis.jms.client.ActiveMQSession)session).createQueue(receiveQueue);
-						log.info("targetq: {}",targetQueue);
-						log.info("targetq: {}",((ActiveMQQueue)targetQueue).getQueueConfiguration());
+							// Connect to queue using JMS
+							targetQueue = ((org.apache.activemq.artemis.jms.client.ActiveMQSession) session).createQueue(receiveQueue);
+							log.info("targetq: {}", targetQueue);
+							log.info("targetq: {}", ((ActiveMQQueue) targetQueue).getQueueConfiguration());
 //						log.info("FilterString: {}",((ActiveMQQueue)targetQueue).getQueueConfiguration().getFilterString());
-						break;
-					case "OPENWIRE":
-						targetQueue = ((org.apache.activemq.ActiveMQSession)session).createQueue(receiveQueue);
-						break;
+							break;
+						case "OPENWIRE":
+							targetQueue = ((org.apache.activemq.ActiveMQSession) session).createQueue(receiveQueue);
+							break;
+					}
+
+					consumer = receiveSelector.isEmpty() ? session.createConsumer(targetQueue) : session.createConsumer(targetQueue, receiveSelector);
+				} else {
+					// Creating Topic consumer
+					log.info("receiveTopic: {}", receiveTopic);
+					log.info("receiveShared: {}", receiveShared);
+					log.info("receiveDurable: {}", receiveDurable);
+					log.info("receiveSubscriptionName: {}", receiveSubscriptionName);
+					log.info("receiveSelector: {}", receiveSelector);
+					Topic targetTopic = null;
+					switch (connectionFactoryConfig.getType()) {
+						case "AMQP":
+							targetTopic = session.createTopic(receiveTopic);
+							break;
+						case "CORE":
+							targetTopic = session.createTopic(receiveTopic);
+							break;
+						case "OPENWIRE":
+							targetTopic = session.createTopic(receiveTopic);
+							break;
+					}
+					// Shared or Durable?
+					if (Boolean.TRUE.equals(receiveShared) && Boolean.TRUE.equals(receiveDurable)) {
+						consumer = receiveSelector.isEmpty() ? session.createSharedDurableConsumer(targetTopic, receiveSubscriptionName) : session.createSharedDurableConsumer(targetTopic, receiveSubscriptionName, receiveSelector);
+					} else if (Boolean.TRUE.equals(receiveShared)) {
+						consumer = receiveSelector.isEmpty() ? session.createSharedConsumer(targetTopic, receiveSubscriptionName) : session.createSharedConsumer(targetTopic, receiveSubscriptionName, receiveSelector);
+					} else if (Boolean.TRUE.equals(receiveDurable)) {
+						consumer = receiveSelector.isEmpty() ? session.createDurableConsumer(targetTopic, receiveSubscriptionName) : session.createDurableConsumer(targetTopic, receiveSubscriptionName, receiveSelector, false);
+					} else {
+						consumer = receiveSelector.isEmpty() ? session.createConsumer(targetTopic) : session.createConsumer(targetTopic, receiveSelector, false);
+					}
 				}
 
-
-				connection.start();
-
-				if (! inactivityDuration.isEmpty()) {
+				if (!inactivityDuration.isEmpty()) {
 					log.info("Sleeping for {}ms", inactivityDuration);
 					Thread.sleep(Long.valueOf(inactivityDuration));
 
 				}
+				connection.start();
 
-				MessageConsumer consumer =  receiveSelector.isEmpty() ? session.createConsumer( targetQueue ) : session.createConsumer( targetQueue, receiveSelector );
+
 
 
 				while (!stopReceive) {

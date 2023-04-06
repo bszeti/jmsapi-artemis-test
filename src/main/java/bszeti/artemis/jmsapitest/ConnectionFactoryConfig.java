@@ -28,6 +28,8 @@ public class ConnectionFactoryConfig {
     private Integer maxConnections;
     private Integer sessionCacheSize;
 
+    private String clientId;
+
 
     //AMQP ConnectionFactory
     public ConnectionFactory amqpConnectionFactory(){
@@ -39,6 +41,8 @@ public class ConnectionFactoryConfig {
         if (StringUtils.hasLength(this.getPassword())) {
             factory.setPassword(this.getPassword());
         }
+
+        if (StringUtils.hasLength(clientId)) factory.setClientID(clientId);
 
         return factory;
     }
@@ -54,6 +58,8 @@ public class ConnectionFactoryConfig {
             factory.setPassword(this.getPassword());
         }
 
+        if (StringUtils.hasLength(clientId)) factory.setClientID(clientId);
+
         return factory;
     }
 
@@ -68,6 +74,8 @@ public class ConnectionFactoryConfig {
         if (StringUtils.hasLength(this.getPassword())) {
             factory.setPassword(this.getPassword());
         }
+
+        if (StringUtils.hasLength(clientId)) factory.setClientID(clientId);
 
         return factory;
     }
@@ -178,5 +186,13 @@ public class ConnectionFactoryConfig {
 
     public void setEnableConnectionPool(Boolean enableConnectionPool) {
         this.enableConnectionPool = enableConnectionPool;
+    }
+
+    public String getClientId() {
+        return clientId;
+    }
+
+    public void setClientId(String clientId) {
+        this.clientId = clientId;
     }
 }
