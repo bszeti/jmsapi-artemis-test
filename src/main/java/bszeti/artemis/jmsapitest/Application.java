@@ -212,7 +212,7 @@ public class Application implements CommandLineRunner {
 					log.info("receiveShared: {}", receiveShared);
 					log.info("receiveDurable: {}", receiveDurable);
 					log.info("receiveSubscriptionName: {}", receiveSubscriptionName);
-					log.info("receiveSelector: {}", receiveSelector);
+					log.info("receiveSelector: {}", receiveSelector.isEmpty() ? "isEmpty" : receiveSelector);
 					Topic targetTopic = null;
 					switch (connectionFactoryConfig.getType()) {
 						case "AMQP":
@@ -233,7 +233,7 @@ public class Application implements CommandLineRunner {
 					} else if (Boolean.TRUE.equals(receiveDurable)) {
 						consumer = receiveSelector.isEmpty() ? session.createDurableConsumer(targetTopic, receiveSubscriptionName) : session.createDurableConsumer(targetTopic, receiveSubscriptionName, receiveSelector, false);
 					} else {
-						consumer = receiveSelector.isEmpty() ? session.createConsumer(targetTopic) : session.createConsumer(targetTopic, receiveSelector, false);
+						consumer = receiveSelector.isEmpty() ? session.createConsumer(targetTopic) : session.createConsumer(targetTopic, receiveSelector);
 					}
 				}
 
