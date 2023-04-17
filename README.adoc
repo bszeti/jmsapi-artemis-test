@@ -1,38 +1,33 @@
 = Artemis broker test app using simple JMS API
 
-This application can send messages to an Artemis message broker.
+Send message with AMQP (_Qpid JMS Client_):
 
-== Connection
+* url: amqp:localhost:61616
+* username/password: admin/admin
+* Message body is small text ("message")
+* Message has one text header that's 600,000 chars long ("HHH....")
+* Message is sent in a transacted session
 
-It supports AMQP (_Qpid JMS Client_) or Artemis Core protocol to connect to the broker.
-
-```
-connection.type=AMQP
-connection.remoteUrl=amqp://localhost:5672?jms.prefetchPolicy.all=10
-```
-
-or
+Run as:
 
 ```
-connection.type=CORE
-connection.remoteUrl=tcp://localhost:61616
+mvn clean package; java -jar target/jmsapitest-1.0-SNAPSHOT.jar
 ```
 
-
-== Send messages
-
-We can send messages to a queue by creating this properties file:
+AMQ Broker (tested v7.10.2 & v7.11.0) stops with error message:
 ```
-#See application-send.properties
-send.enabled=true
-send.queue=myqueue
-send.count=20000
-send.message.length=10000
-send.useAnonymousProducers=true
+2023-04-17 16:43:16,664 ERROR [org.apache.activemq.artemis.core.journal.impl.JournalImpl] Exception during appendAddRecordTransactional:
+java.lang.IllegalStateException: Can't write records (size=600264) bigger than the bufferSize(501760) on the journal
+	at org.apache.activemq.artemis.core.io.buffer.TimedBuffer.checkSize(TimedBuffer.java:222) ~[artemis-journal-2.28.0.redhat-00003.jar:2.28.0.redhat-00003]
+	at org.apache.activemq.artemis.core.io.AbstractSequentialFile.fits(AbstractSequentialFile.java:184) ~[artemis-journal-2.28.0.redhat-00003.jar:2.28.0.redhat-00003]
+	at org.apache.activemq.artemis.core.journal.impl.JournalImpl.switchFileIfNecessary(JournalImpl.java:3493) ~[artemis-journal-2.28.0.redhat-00003.jar:2.28.0.redhat-00003]
+	at org.apache.activemq.artemis.core.journal.impl.JournalImpl.appendRecord(JournalImpl.java:3226) ~[artemis-journal-2.28.0.redhat-00003.jar:2.28.0.redhat-00003]
+	at org.apache.activemq.artemis.core.journal.impl.JournalImpl$4.run(JournalImpl.java:1282) ~[artemis-journal-2.28.0.redhat-00003.jar:2.28.0.redhat-00003]
+	at org.apache.activemq.artemis.utils.actors.OrderedExecutor.doTask(OrderedExecutor.java:57) ~[artemis-commons-2.28.0.redhat-00003.jar:?]
+	at org.apache.activemq.artemis.utils.actors.OrderedExecutor.doTask(OrderedExecutor.java:32) ~[artemis-commons-2.28.0.redhat-00003.jar:?]
+	at org.apache.activemq.artemis.utils.actors.ProcessorBase.executePendingTasks(ProcessorBase.java:68) ~[artemis-commons-2.28.0.redhat-00003.jar:?]
+	at java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136) ~[?:?]
+	at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635) ~[?:?]
+	at org.apache.activemq.artemis.utils.ActiveMQThreadFactory$1.run(ActiveMQThreadFactory.java:118) ~[artemis-commons-2.28.0.redhat-00003.jar:?]
+2023-04-17 16:43:16,790 INFO  [org.apache.activemq.artemis] AMQ241005: Stopping embedded web server
 ```
-
-This will send 200000 messages with 10k char message body. It uses a JMS Producer without a default Destination (`send.useAnonymousProducers=true`).
-
-Run application using the _send_ Spring profile. For example with Maven:
-
-`mvn clean spring-boot:run -Dspring-boot.run.profiles=send`

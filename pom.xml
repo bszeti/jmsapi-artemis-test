@@ -10,12 +10,9 @@
 		<groupId>org.springframework.boot</groupId>
 		<artifactId>spring-boot-starter-parent</artifactId>
 		<version>2.3.7.RELEASE</version>
-<!--		<version>2.2.7.RELEASE</version>-->
-		<!-- <version>2.1.6.RELEASE</version> -->
 	</parent>
 
 	<properties>
-
 
 		<!-- maven plugin versions -->
 		<maven-compiler-plugin.version>3.8.1</maven-compiler-plugin.version>
@@ -25,69 +22,12 @@
 	</properties>
 
 	<dependencies>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-web</artifactId>
-			<exclusions>
-				<exclusion>
-					<groupId>org.springframework.boot</groupId>
-					<artifactId>spring-boot-starter-tomcat</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework.boot</groupId>
-			<artifactId>spring-boot-starter-undertow</artifactId>
-		</dependency>
-
 
 		<dependency>
-			<groupId>org.amqphub.spring</groupId>
-			<artifactId>amqp-10-jms-spring-boot-starter</artifactId>
-			<version>2.3.7</version>
+			<groupId>org.apache.qpid</groupId>
+			<artifactId>qpid-jms-client</artifactId>
+			<version>0.61.0.redhat-00001</version>
 		</dependency>
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.activemq</groupId>-->
-<!--			<artifactId>artemis-cli</artifactId>-->
-<!--			<version>2.18.0</version>-->
-<!--		</dependency>-->
-
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>artemis-jms-client-all</artifactId>
-			<version>2.18.0</version>
-		</dependency>
-
-
-
-		<dependency>
-			<groupId>org.apache.activemq</groupId>
-			<artifactId>activemq-client</artifactId>
-<!--			<version>5.11.4</version>-->
-			<version>5.17.0</version>
-<!--			<version>5.11.0.redhat-621107</version>-->
-			<exclusions>
-				<exclusion>
-					<groupId>org.apache.geronimo.specs</groupId>
-					<artifactId>geronimo-jms_1.1_spec</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-
-<!--		<dependency>-->
-<!--			<groupId>org.apache.qpid</groupId>-->
-<!--			<artifactId>qpid-jms-client</artifactId>-->
-<!--			<version>0.53.0.redhat-00001</version>-->
-<!--		</dependency>-->
-
-		<dependency>
-			<groupId>org.messaginghub</groupId>
-			<artifactId>pooled-jms</artifactId>
-			<version>1.2.1</version>
-		</dependency>
-
 
 	</dependencies>
 	<build>
@@ -126,7 +66,6 @@
 
 		</plugins>
 	</build>
-
 
 	<repositories>
 		<repository>
